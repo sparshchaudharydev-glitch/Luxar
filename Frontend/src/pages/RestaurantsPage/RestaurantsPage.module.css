@@ -1,0 +1,53 @@
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.addButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 18px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  margin-left: auto;
+  transition: filter 0.15s ease, transform 0.15s ease;
+}
+
+.addButton:hover {
+  filter: brightness(0.95);
+}
+
+.addButton:active {
+  transform: scale(0.98);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+.empty {
+  padding: 60px 0;
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+@media (max-width: 640px) {
+  .addButton {
+    width: 100%;
+    justify-content: center;
+    margin-left: 0;
+  }
+}
