@@ -11,8 +11,10 @@ from .models.opening_hours import OpeningHours
 # Import routers
 from .routers import restaurants, menu_items, opening_hours
 
-# from .models.restaurant_contact import RestaurantContact
-# from .routers import restaurant_contacts
+from .routers import restaurant_contacts
+from .models.restaurant_contacts import RestaurantContact
+from .routers import restaurant_contacts
+
 
 Base.metadata.create_all(bind=engine)
 
@@ -41,7 +43,7 @@ app.include_router(
 )
 
 
-# app.include_router(
-#     restaurant_contacts.router,
-#     tags=["Restaurant Contacts"]
-# )
+app.include_router(
+    restaurant_contacts.router,
+    tags=["Restaurant Contacts"]
+)
