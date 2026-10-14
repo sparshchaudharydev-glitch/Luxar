@@ -2,13 +2,114 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  max-width: 880px;
 }
 
-.intro {
-  margin: 0;
+/* Restaurant picker */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.picker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+}
+
+.picker select {
+  height: 40px;
+  min-width: 260px;
+  padding: 0 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  outline: none;
+}
+
+.picker select:focus {
+  border-color: var(--color-primary);
+}
+
+/* Two columns: settings panel on the left, content on the right */
+.layout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  position: sticky;
+  top: 96px;
+}
+
+.panelItem {
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--color-text);
+  text-decoration: none;
+  position: relative;
+}
+
+.panelItem:hover {
+  background: var(--color-bg);
+}
+
+.panelActive {
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.panelActive::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--color-primary);
+}
+
+.content {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.empty {
+  padding: 60px 0;
+  text-align: center;
   color: var(--color-text-muted);
   font-size: 14px;
+}
+
+/* Account form */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 760px;
 }
 
 .card {
@@ -139,7 +240,7 @@
   box-shadow: 0 0 0 3px var(--color-primary-soft);
 }
 
-/* Footer */
+/* Footer buttons */
 .footer {
   display: flex;
   align-items: center;
@@ -184,8 +285,29 @@
   background: var(--color-bg);
 }
 
+@media (max-width: 860px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .panel {
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .panelActive::before {
+    display: none;
+  }
+}
+
 @media (max-width: 640px) {
   .grid {
     grid-template-columns: 1fr;
+  }
+
+  .picker select {
+    min-width: 0;
+    width: 100%;
   }
 }

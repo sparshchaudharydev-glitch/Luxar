@@ -18,7 +18,7 @@ function KeyValue({ label, value }) {
   return (
     <div className={styles.kv}>
       <span className={styles.kvLabel}>{label}</span>
-      <span className={styles.kvValue}>{value}</span>
+      <span className={styles.kvValue}>{value || '—'}</span>
     </div>
   );
 }
@@ -27,20 +27,31 @@ function Empty({ children }) {
   return <p className={styles.cardText}>{children}</p>;
 }
 
+// Shows uploaded photo URLs, or a placeholder tile for each entry if there's no URL.
+function PhotoGrid({ urls, hue, label }) {
+  return (
+    <div className={styles.photoGrid}>
+      {urls.map((url, i) =>
+        url ? (
+          <img key={i} className={styles.photo} src={url} alt={label} />
+        ) : (
+          <div key={i} className={styles.photo} style={photoStyle(hue, i)} role="img" aria-label={label} />
+        )
+      )}
+    </div>
+  );
+}
+
 function Interior({ d, restaurant }) {
   return (
     <Card
       title="1. Interior & Exterior Photos"
-      action={<a className={styles.link} href={`#/restaurants/${restaurant.id}/images`}>View All</a>}
+      action={<a className={styles.link} href={`#/restaurant-settings/${restaurant.id}/images`}>View All</a>}
     >
-      {d.interiorHues.length === 0 ? (
+      {d.interiorPhotos.length === 0 ? (
         <Empty>No photos added yet.</Empty>
       ) : (
-        <div className={styles.photoGrid}>
-          {d.interiorHues.map((h, i) => (
-            <div key={i} className={styles.photo} style={photoStyle(h, i)} role="img" aria-label="Restaurant photo" />
-          ))}
-        </div>
+        <PhotoGrid urls={d.interiorPhotos} hue={restaurant.hue} label="Restaurant photo" />
       )}
     </Card>
   );
@@ -128,16 +139,12 @@ function Food({ d, restaurant }) {
   return (
     <Card
       title="7. Food & Seating Photos"
-      action={<a className={styles.link} href={`#/restaurants/${restaurant.id}/food-seating`}>View All</a>}
+      action={<a className={styles.link} href={`#/restaurant-settings/${restaurant.id}/food-seating`}>View All</a>}
     >
-      {d.foodHues.length === 0 ? (
+      {d.foodPhotos.length === 0 ? (
         <Empty>No photos added yet.</Empty>
       ) : (
-        <div className={styles.photoGrid}>
-          {d.foodHues.map((h, i) => (
-            <div key={i} className={styles.photo} style={photoStyle(h, i)} role="img" aria-label="Food or seating photo" />
-          ))}
-        </div>
+        <PhotoGrid urls={d.foodPhotos} hue={restaurant.hue + 20} label="Food or seating photo" />
       )}
     </Card>
   );
@@ -158,7 +165,7 @@ function Reviews({ d, restaurant }) {
       ) : (
         <Empty>No reviews yet.</Empty>
       )}
-      <a className={styles.outlineButton} href={`#/restaurants/${restaurant.id}/reviews`}>
+      <a className={styles.outlineButton} href={`#/restaurant-settings/${restaurant.id}/reviews`}>
         View Reviews
       </a>
     </Card>

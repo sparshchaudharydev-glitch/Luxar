@@ -2,11 +2,22 @@
 // FastAPI server on port 8000 (see vite.config.js), so the browser sees a same-origin request.
 const BASE = '/api';
 
+// FastAPI returns errors as { detail: "text" } or, for validation errors, { detail: [{ msg, loc }] }
+function errorMessage(status, body) {
+  const detail = body?.detail;
+  if (typeof detail === 'string') return detail;
+  if (Array.isArray(detail) && detail.length) {
+    return detail.map((d) => `${d.loc?.at(-1) ?? 'value'}: ${d.msg}`).join('; ');
+  }
+  return `Request failed (${status})`;
+}
+
 async function request(path, options = {}) {
   let res;
   try {
     res = await fetch(`${BASE}${path}`, {
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include', // send the session cookie set by /auth/login
       ...options,
     });
   } catch {
@@ -15,28 +26,43 @@ async function request(path, options = {}) {
 
   const body = await res.json().catch(() => null);
 
-  if (!res.ok) {
-    // FastAPI errors look like { detail: "Restaurant not found" }
-    const message = typeof body?.detail === 'string' ? body.detail : `Request failed (${res.status})`;
-    throw new Error(message);
-  }
+  if (!res.ok) throw new Error(errorMessage(res.status, body));
 
   return body;
 }
 
 export const api = {
-  // Returns an object keyed by restaurant ID: { "1": { name, location }, ... }
+  // Email + password. The backend sets a session cookie and returns the admin account.
+  login: (email, password) =>
+    request('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
+
+  // Creates an admin account from name, email and password.
+  register: ({ name, email, password }) =>
+    request('/auth/register', { method: 'POST', body: JSON.stringify({ name, email, password }) }),
+
+  // Returns the signed-in admin, or throws 401 when there is no session cookie.
+  me: () => request('/auth/me'),
+
+  logout: () => request('/auth/logout', { method: 'POST' }),
+
+  // TODO: the backend has no /auth/google route yet. It needs to verify the Google ID token
+  // (credential) and sign in or create the admin account by email, then set the session cookie.
+  googleLogin: (credential) =>
+    request('/auth/google', { method: 'POST', body: JSON.stringify({ credential }) }),
+
+  // TODO: confirm the QR route. Returns the restaurant or other details for a scanned code.
+  scanQr: (code) => request(`/qr/${encodeURIComponent(code)}`),
+
+  // Returns an object keyed by restaurant ID: { "1": { name, location, ... }, ... }
   listRestaurants: () => request('/restaurants'),
 
-  // Body: { name, location }. Returns { message, restaurant_id }.
-listRestaurants: () => request('/restaurants/'),
+  // Body: { name, location, ... }. Returns { message, restaurant_id }.
+  createRestaurant: (data) =>
+    request('/restaurants/', { method: 'POST', body: JSON.stringify(data) }),
 
-createRestaurant: (data) =>
-  request('/restaurants/', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  }),
+  // Body: any subset of the restaurant fields, in snake_case.
+  updateRestaurant: (id, data) =>
+    request(`/restaurants/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(data) }),
 
   deleteRestaurant: (id) => request(`/restaurants/${encodeURIComponent(id)}`, { method: 'DELETE' }),
 };
-

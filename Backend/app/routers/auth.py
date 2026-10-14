@@ -1,7 +1,3 @@
-
-import hmac
-import os
-
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy import select
@@ -47,20 +43,6 @@ def register_admin(
     data: AdminRegister,
     db: Session = Depends(get_db),
 ):
-    expected_key = os.getenv("ADMIN_REGISTRATION_KEY")
-
-    if not expected_key:
-        raise HTTPException(
-            status_code=500,
-            detail="Admin registration is not configured",
-        )
-
-    if not hmac.compare_digest(data.registration_key, expected_key):
-        raise HTTPException(
-            status_code=403,
-            detail="Invalid registration key",
-        )
-
     email = str(data.email).lower()
 
     existing_admin = db.scalar(

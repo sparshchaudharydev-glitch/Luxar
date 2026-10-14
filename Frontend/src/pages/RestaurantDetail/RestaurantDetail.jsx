@@ -1,10 +1,13 @@
+import { useState } from 'react';
 import styles from './RestaurantDetail.module.css';
 import { MapIcon, TrashIcon } from '../../components/icons/Icons.jsx';
 import { photoStyle } from '../../utils/photo.js';
 import { go } from '../../router.js';
 import { SECTIONS } from './sections.jsx';
+import SectionForm from './SectionForm.jsx';
 
-const TABS = [
+// Section tabs shown in the restaurant settings panel.
+export const RESTAURANT_TABS = [
   {
     id: 'overview',
     label: 'Overview',
@@ -27,9 +30,11 @@ const OVERVIEW_SPAN = {
   luxar: styles.fullWidth,
 };
 
-export default function RestaurantDetail({ restaurant, tab, onDelete }) {
+export default function RestaurantDetail({ restaurant, tab, onUpdate, onDelete }) {
   const { id, name, address, hue, details: d } = restaurant;
-  const current = TABS.find((t) => t.id === tab) ?? TABS[0];
+  const [editing, setEditing] = useState(false);
+
+  const current = RESTAURANT_TABS.find((t) => t.id === tab) ?? RESTAURANT_TABS[0];
   const isOverview = current.id === 'overview';
 
   const handleDelete = () => {
@@ -39,12 +44,20 @@ export default function RestaurantDetail({ restaurant, tab, onDelete }) {
     }
   };
 
+  // Saves the changed fields, then leaves edit mode. Errors propagate to the form.
+  const handleSave = async (changes) => {
+    await onUpdate(id, changes);
+    setEditing(false);
+  };
+
   return (
     <div className={styles.page}>
       <div className={styles.topBar}>
-        <a href="#/restaurants" className={styles.back}>
-          ← Back to Restaurants
-        </a>
+        {!editing && (
+          <button type="button" className={styles.editButton} onClick={() => setEditing(true)}>
+            Edit details
+          </button>
+        )}
         <button type="button" className={styles.deleteButton} onClick={handleDelete}>
           <TrashIcon width={16} height={16} />
           Delete Restaurant
@@ -62,38 +75,28 @@ export default function RestaurantDetail({ restaurant, tab, onDelete }) {
             <MapIcon />
             {address}
           </p>
-          <a href="#/restaurant-settings" className={styles.editButton}>
-            Edit Details
-          </a>
         </div>
       </section>
 
-      <nav className={styles.tabs} aria-label="Restaurant sections">
-        {TABS.map((t) => {
-          const active = t.id === current.id;
-          return (
-            <a
-              key={t.id}
-              href={`#/restaurants/${id}/${t.id}`}
-              className={`${styles.tab} ${active ? styles.tabActive : ''}`}
-              aria-current={active ? 'page' : undefined}
-            >
-              {t.label}
-            </a>
-          );
-        })}
-      </nav>
-
-      <div className={isOverview ? styles.overviewGrid : styles.sectionGrid}>
-        {current.sections.map((key) => {
-          const Section = SECTIONS[key];
-          return (
-            <div key={key} className={isOverview ? OVERVIEW_SPAN[key] : undefined}>
-              <Section d={d} restaurant={restaurant} />
-            </div>
-          );
-        })}
-      </div>
+      {editing ? (
+        <SectionForm
+          restaurant={restaurant}
+          sectionKeys={current.sections}
+          onSave={handleSave}
+          onCancel={() => setEditing(false)}
+        />
+      ) : (
+        <div className={isOverview ? styles.overviewGrid : styles.sectionGrid}>
+          {current.sections.map((key) => {
+            const Section = SECTIONS[key];
+            return (
+              <div key={key} className={isOverview ? OVERVIEW_SPAN[key] : undefined}>
+                <Section d={d} restaurant={restaurant} />
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

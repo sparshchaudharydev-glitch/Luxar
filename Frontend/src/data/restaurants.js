@@ -1,16 +1,6 @@
-// Restaurant records now come from the API (see src/api/client.js).
-// The helpers below adapt those records for the UI. Pages that aren't backed
-// by the API yet (employees, menu, combos, FAQ, settings) still use the sample data here.
-
-export const currentUser = {
-  name: 'Martin Franci',
-  initials: 'MF',
-};
-
-export const currentLocation = {
-  name: 'Louvre Opéra',
-  address: '2464 Royal Ln, Mesa',
-};
+// Restaurant records come from the API (see src/api/client.js).
+// The helpers below adapt those records for the UI. Restaurant Settings still
+// uses these sample defaults until it is backed by the API.
 
 export const settingsDefaults = {
   name: 'Louvre Opéra',
@@ -23,15 +13,6 @@ export const settingsDefaults = {
   onlineOrdering: true,
   notifications: true,
 };
-
-export const employees = [
-  { id: 1, name: 'Aarav Sharma', role: 'Manager', restaurant: 'The Spice House', status: 'Active', joined: 'Mar 12, 2024' },
-  { id: 2, name: 'Priya Nair', role: 'Chef', restaurant: 'Incognito Kitchen & Bar', status: 'Active', joined: 'Jun 02, 2024' },
-  { id: 3, name: 'Rohan Mehta', role: 'Waiter', restaurant: 'Hoppá Bistro', status: 'On leave', joined: 'Sep 18, 2024' },
-  { id: 4, name: 'Sara Khan', role: 'Cashier', restaurant: 'Trattoria Venezia', status: 'Active', joined: 'Jan 21, 2025' },
-  { id: 5, name: 'Dev Patel', role: 'Chef', restaurant: 'Hedonist Restaurant', status: 'Inactive', joined: 'Nov 05, 2023' },
-  { id: 6, name: 'Ananya Rao', role: 'Host', restaurant: 'Rudas Bistro', status: 'Active', joined: 'Jul 30, 2025' },
-];
 
 export const menuItems = [
   { id: 1, name: 'Paneer Tikka', category: 'Starters', price: 320, type: 'veg', available: true },
@@ -55,7 +36,6 @@ export const faqs = [
   { q: 'How do I change my restaurant’s opening hours?', a: 'Open Restaurant Settings and update the opening and closing times under Operations, then click Save changes.' },
   { q: 'Can I turn off online ordering temporarily?', a: 'Yes. In Restaurant Settings, switch off “Accept online orders”. Customers will see the restaurant as closed for orders.' },
   { q: 'How do I mark a menu item as sold out?', a: 'Go to Menu, find the item and switch its availability toggle off. It will be hidden from customers until you turn it back on.' },
-  { q: 'Who can see my employees list?', a: 'Only accounts with manager access can view and manage the Employees page.' },
 ];
 
 // ---------- Adapters for API records ----------
@@ -67,15 +47,15 @@ function hashString(text) {
   return h;
 }
 
-// Placeholder details for fields the backend doesn't store yet.
+// Used for any detail field the backend hasn't filled in yet.
 export function emptyDetails() {
   return {
     status: 'Active',
     coords: null,
-    interiorHues: [],
-    foodHues: [],
-    contact: { phone: '—', whatsapp: '—', instagram: '—' },
-    timing: { opening: '—', closing: '—', weeklyOff: '—' },
+    interiorPhotos: [],
+    foodPhotos: [],
+    contact: { phone: '', whatsapp: '', instagram: '' },
+    timing: { opening: '', closing: '', weeklyOff: '' },
     menu: { veg: 0, nonVeg: 0, shakes: 0 },
     facilities: [],
     reviews: { rating: null, count: 0 },
@@ -83,15 +63,28 @@ export function emptyDetails() {
   };
 }
 
-// The backend stores { name, location } keyed by ID. Convert that to the UI's shape.
+// The backend returns { name, location, rating, employees, coords, contact, ... }
+// keyed by ID. Convert that to the UI's shape, filling gaps with empty values.
 export function normalizeRestaurant(id, raw) {
+  const empty = emptyDetails();
   return {
     id: String(id),
     name: raw.name,
     address: raw.location,
-    rating: null,
-    employees: null,
+    rating: raw.rating ?? null,
+    employees: raw.employees ?? null,
     hue: hashString(String(id)) % 360,
-    details: emptyDetails(),
+    details: {
+      status: raw.status ?? empty.status,
+      coords: raw.coords ?? null,
+      interiorPhotos: raw.interiorPhotos ?? [],
+      foodPhotos: raw.foodPhotos ?? [],
+      contact: { ...empty.contact, ...raw.contact },
+      timing: { ...empty.timing, ...raw.timing },
+      menu: { ...empty.menu, ...raw.menu },
+      facilities: raw.facilities ?? [],
+      reviews: { ...empty.reviews, ...raw.reviews },
+      luxarPartner: raw.luxarPartner ?? false,
+    },
   };
 }

@@ -1,25 +1,29 @@
 import { useEffect, useState } from 'react';
 
-// Hash-based routing: no extra dependency needed, and it works when opened from a file.
-//   #/restaurants                  -> list
-//   #/restaurants/:id              -> detail (overview tab)
-//   #/restaurants/:id/:tab         -> detail, specific tab
-//   #/restaurant-settings, #/employees, #/menu, #/combo, #/help
-
-const STANDALONE_PAGES = ['restaurant-settings', 'employees', 'menu', 'combo', 'help'];
+// Hash-based routing: no extra dependency needed.
+//   #/restaurants                      -> list of restaurants
+//   #/restaurant-settings              -> settings for the first restaurant
+//   #/restaurant-settings/:id          -> settings for one restaurant
+//   #/restaurant-settings/:id/:tab     -> one restaurant, one section
+//   #/restaurant-settings/account      -> account settings
+//   #/restaurants/:id/:tab             -> older links, shown in restaurant settings
 
 export function parseHash(hash) {
-  const [first, second, third] = hash.replace(/^#\/?/, '').split('/').filter(Boolean);
+  const [first, second, third] = hash
+    .replace(/^#\/?/, '')
+    .split('/')
+    .filter(Boolean)
+    .map((part) => decodeURIComponent(part));
 
-  if (!first || first === 'restaurants') {
-    if (second) {
-      // IDs come from the backend as strings, e.g. "1"
-      return { page: 'restaurant', id: decodeURIComponent(second), tab: third || 'overview' };
-    }
-    return { page: 'restaurants' };
+  if (first === 'restaurant-settings') {
+    if (second === 'account') return { page: 'restaurant-settings', id: null, tab: 'account' };
+    return { page: 'restaurant-settings', id: second ?? null, tab: third || 'overview' };
   }
 
-  if (STANDALONE_PAGES.includes(first)) return { page: first };
+  if (first === 'restaurants' && second) {
+    return { page: 'restaurant-settings', id: second, tab: third || 'overview' };
+  }
+
   return { page: 'restaurants' };
 }
 

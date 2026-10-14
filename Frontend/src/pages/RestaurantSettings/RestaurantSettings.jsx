@@ -1,13 +1,92 @@
 import { useState } from 'react';
 import styles from './RestaurantSettings.module.css';
+import RestaurantDetail, { RESTAURANT_TABS } from '../RestaurantDetail/RestaurantDetail.jsx';
+import { go } from '../../router.js';
 import { settingsDefaults } from '../../data/restaurants.js';
 
-const CUISINES = ['Continental', 'North Indian', 'South Indian', 'Italian', 'Chinese', 'Fast Food'];
-const CURRENCIES = ['INR (₹)', 'USD ($)', 'EUR (€)', 'GBP (£)'];
+const ACCOUNT_TAB = { id: 'account', label: 'Account' };
 
-export default function RestaurantSettings() {
+export default function RestaurantSettings({ restaurants, restaurantId, tab, onUpdate, onDelete }) {
+  const isAccount = tab === 'account';
+  const selected = restaurantId ? restaurants.find((r) => r.id === restaurantId) : restaurants[0];
+  const base = selected ? `#/restaurant-settings/${selected.id}` : '#/restaurant-settings';
+  const tabs = [...RESTAURANT_TABS, ACCOUNT_TAB];
+
+  let content;
+  if (isAccount) {
+    content = <AccountForm />;
+  } else if (!selected) {
+    content = (
+      <p className={styles.empty}>
+        {restaurants.length === 0
+          ? 'No restaurants yet. Add one from My Restaurants.'
+          : 'This restaurant doesn’t exist or was deleted.'}
+      </p>
+    );
+  } else {
+    // key resets edit mode when switching restaurant or section
+    content = (
+      <RestaurantDetail
+        key={`${selected.id}-${tab}`}
+        restaurant={selected}
+        tab={tab}
+        onUpdate={onUpdate}
+        onDelete={onDelete}
+      />
+    );
+  }
+
+  return (
+    <div className={styles.page}>
+      <div className={styles.toolbar}>
+        <label className={styles.picker}>
+          <span>Restaurant</span>
+          <select
+            value={selected?.id ?? ''}
+            disabled={restaurants.length === 0}
+            onChange={(e) => go(`#/restaurant-settings/${e.target.value}`)}
+          >
+            {restaurants.length === 0 && <option value="">No restaurants</option>}
+            {restaurants.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      <div className={styles.layout}>
+        <nav className={styles.panel} aria-label="Settings sections">
+          {tabs.map((t) => {
+            const active = t.id === tab;
+            const href = t.id === 'account' ? '#/restaurant-settings/account' : `${base}/${t.id}`;
+            return (
+              <a
+                key={t.id}
+                href={href}
+                className={`${styles.panelItem} ${active ? styles.panelActive : ''}`}
+                aria-current={active ? 'page' : undefined}
+              >
+                {t.label}
+              </a>
+            );
+          })}
+        </nav>
+
+        <div className={styles.content}>{content}</div>
+      </div>
+    </div>
+  );
+}
+
+// General settings form (not tied to a single restaurant yet).
+function AccountForm() {
   const [form, setForm] = useState(settingsDefaults);
   const [saved, setSaved] = useState(false);
+
+  const CUISINES = ['Continental', 'North Indian', 'South Indian', 'Italian', 'Chinese', 'Fast Food'];
+  const CURRENCIES = ['INR (₹)', 'USD ($)', 'EUR (€)', 'GBP (£)'];
 
   const setField = (key) => (e) => {
     setSaved(false);
@@ -30,14 +109,12 @@ export default function RestaurantSettings() {
   };
 
   return (
-    <form className={styles.page} onSubmit={handleSubmit}>
-      <p className={styles.intro}>Update the details, hours and preferences for this restaurant.</p>
-
+    <form className={styles.form} onSubmit={handleSubmit}>
       <section className={styles.card}>
         <h3 className={styles.cardTitle}>General</h3>
         <div className={styles.grid}>
           <label className={styles.field}>
-            <span>Restaurant name</span>
+            <span>Account name</span>
             <input value={form.name} onChange={setField('name')} required />
           </label>
           <label className={styles.field}>

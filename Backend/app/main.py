@@ -22,7 +22,10 @@ from .routers import restaurant_photos
 import os
 from dotenv import load_dotenv
 from starlette.middleware.sessions import SessionMiddleware
-
+import os
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.sessions import SessionMiddleware
 from .models.admin import Admin
 from .routers import auth
 
@@ -33,6 +36,13 @@ app = FastAPI(title="Luxar API")
 
 load_dotenv()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 # Enables signed session cookies for your FastAPI app.
 app.add_middleware(
     SessionMiddleware,

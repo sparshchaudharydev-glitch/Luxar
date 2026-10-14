@@ -5,7 +5,7 @@ import { go } from '../../router.js';
 
 export default function RestaurantCard({ restaurant, onDelete }) {
   const { id, name, address, rating, employees, hue } = restaurant;
-  const open = () => go(`#/restaurants/${id}`);
+  const open = () => go(`#/restaurant-settings/${id}`);
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') open();
