@@ -29,8 +29,14 @@ export const api = {
   listRestaurants: () => request('/restaurants'),
 
   // Body: { name, location }. Returns { message, restaurant_id }.
-  createRestaurant: (data) =>
-    request('/restaurants', { method: 'POST', body: JSON.stringify(data) }),
+listRestaurants: () => request('/restaurants/'),
+
+createRestaurant: (data) =>
+  request('/restaurants/', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
 
   deleteRestaurant: (id) => request(`/restaurants/${encodeURIComponent(id)}`, { method: 'DELETE' }),
 };
+

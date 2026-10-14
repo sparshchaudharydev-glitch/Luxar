@@ -1,6 +1,14 @@
+
+
 fastapi
 uvicorn[standard]
 sqlalchemy
 psycopg[binary]
 python-dotenv
+email-validator
+pwdlib[argon2]
+cloudinary
+python-multipart
 qrcode[pil]
+
+itsdangerous
