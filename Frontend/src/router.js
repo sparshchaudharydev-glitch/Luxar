@@ -7,6 +7,8 @@ import { useEffect, useState } from 'react';
 //   #/restaurant-settings/:id/:tab     -> one restaurant, one section
 //   #/restaurant-settings/account      -> account settings
 //   #/restaurants/:id/:tab             -> older links, shown in restaurant settings
+//   #/qr-codes                         -> QR codes for each restaurant
+//   #/r/:id                            -> public restaurant page (opened by a QR scan)
 
 export function parseHash(hash) {
   const [first, second, third] = hash
@@ -23,6 +25,11 @@ export function parseHash(hash) {
   if (first === 'restaurants' && second) {
     return { page: 'restaurant-settings', id: second, tab: third || 'overview' };
   }
+
+  // Public page opened by a QR code scan: #/r/:id (no sign-in needed).
+  if (first === 'r' && second) return { page: 'public-restaurant', id: second };
+
+  if (first === 'qr-codes') return { page: 'qr-codes' };
 
   return { page: 'restaurants' };
 }

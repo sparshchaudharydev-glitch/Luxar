@@ -1,9 +1,10 @@
 import styles from './Sidebar.module.css';
-import { DashboardIcon, LogoutIcon, PanelIcon, SettingsIcon } from '../icons/Icons.jsx';
+import { DashboardIcon, LogoutIcon, PanelIcon, QrIcon, SettingsIcon } from '../icons/Icons.jsx';
 
 const mainNav = [
   { id: 'dashboard', label: 'Dashboard', icon: DashboardIcon, href: '#/restaurants' },
   { id: 'settings', label: 'Restaurant Settings', icon: SettingsIcon, href: '#/restaurant-settings' },
+  { id: 'qr', label: 'QR Codes', icon: QrIcon, href: '#/qr-codes' },
 ];
 
 function NavItem({ item, active }) {

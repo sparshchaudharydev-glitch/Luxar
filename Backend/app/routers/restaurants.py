@@ -131,11 +131,9 @@ def get_restaurant_qr(
     # Uses localhost port 5500 as the default during local development.
     frontend_url = os.getenv(
         "FRONTEND_BASE_URL",
-        "http://127.0.0.1:5500",
-    ).rstrip("/")  # Removes trailing slashes to avoid duplicate slashes in the URL.
-    restaurant_url = (
-        f"{frontend_url}/restaurant.html?id={restaurant.id}"
-    )
+        "http://127.0.0.1:5173",
+    ).rstrip("/") # Removes trailing slashes to avoid duplicate slashes in the URL.
+    restaurant_url = f"{frontend_url}/#/r/{restaurant.id}"
 
     # Generates a QR code containing the restaurant's public page URL.
     # The function returns the QR image as an in-memory PNG file.

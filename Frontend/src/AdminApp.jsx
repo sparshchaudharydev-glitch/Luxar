@@ -7,11 +7,13 @@ import { api } from './api/client.js';
 import { normalizeRestaurant } from './data/restaurants.js';
 import RestaurantsPage from './pages/RestaurantsPage/RestaurantsPage.jsx';
 import RestaurantSettings from './pages/RestaurantSettings/RestaurantSettings.jsx';
+import QrCodesPage from './pages/QrCodes/QrCodesPage.jsx';
 
 // Maps each page to its header title and the sidebar item it highlights.
 const PAGE_META = {
   restaurants: { title: 'My Restaurants', nav: 'dashboard' },
   'restaurant-settings': { title: 'Restaurant Settings', nav: 'settings' },
+  'qr-codes': { title: 'QR Codes', nav: 'qr' },
 };
 
 // Owner/admin view: restaurant list, restaurant settings, and the sidebar.
@@ -88,6 +90,9 @@ export default function AdminApp({ user, onLogout }) {
             onDelete={handleDelete}
           />
         );
+        break;
+      case 'qr-codes':
+        content = <QrCodesPage restaurants={restaurants} />;
         break;
       default:
         content = <RestaurantsPage restaurants={restaurants} onDelete={handleDelete} onAdd={handleAdd} />;

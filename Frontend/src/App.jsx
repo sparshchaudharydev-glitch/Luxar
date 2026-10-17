@@ -4,12 +4,15 @@ import EntryGate from './pages/Entry/EntryGate.jsx';
 import AdminApp from './AdminApp.jsx';
 import CustomerApp from './pages/Customer/CustomerApp.jsx';
 import { api } from './api/client.js';
+import { useRoute } from './router.js';
+import PublicRestaurant from './pages/Public/PublicRestaurant.jsx';
 import { loadSession, saveSession } from './session.js';
 
 // Top-level flow: intro splash -> entry gate (Customer or Owner) -> admin or customer view.
 // Owner accounts come from /auth, so any signed-in owner is an admin.
 // Customers have no account; their choice is kept in sessionStorage.
 export default function App() {
+  const route = useRoute();
   const [showIntro, setShowIntro] = useState(true);
   const finishIntro = useCallback(() => setShowIntro(false), []);
 
@@ -41,6 +44,9 @@ export default function App() {
     }
     startSession(null);
   }, [session, startSession]);
+
+  // QR scans open this page directly, so it skips the intro and the sign-in gate.
+  if (route.page === 'public-restaurant') return <PublicRestaurant id={route.id} />;
 
   let view = null;
   if (!checking) {

@@ -201,3 +201,12 @@
     align-items: stretch;
   }
 }
+
+.stack {
+  width: 100%;
+  max-width: 960px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
