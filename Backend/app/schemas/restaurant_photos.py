@@ -1,6 +1,10 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict
 
 
-class RestaurantPhotoCreate(BaseModel):
-    photo_url: str = Field(..., min_length=1, max_length=1000)
-    category: str = Field(..., min_length=1, max_length=50)
+class RestaurantPhotoResponse(BaseModel):
+    id: int
+    restaurant_id: int
+    photo_url: str
+    category: str
+
+    model_config = ConfigDict(from_attributes=True)

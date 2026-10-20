@@ -1,51 +1,78 @@
+import os
 
-import cloudinary
 import cloudinary.uploader
-
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from ..config import ALLOWED_PHOTO_TYPES, MAX_PHOTO_BYTES, PHOTO_CATEGORIES
 from ..database import get_db
+from ..models.admin import Admin
 from ..models.restaurant import Restaurant
 from ..models.restaurant_photos import RestaurantPhoto
+from ..routers.auth import get_current_admin
+from ..schemas.restaurant_photos import RestaurantPhotoResponse
+from ..services.cloudinary_service import destroy_image
+from ..services.restaurant_service import get_or_404, owned_or_404
 
-from os import getenv
-from dotenv import load_dotenv
+router = APIRouter(tags=["Restaurant Photos"])
 
-load_dotenv()
 
-router = APIRouter()
+@router.get("/restaurants/{restaurant_id}/photos", response_model=list[RestaurantPhotoResponse])
+def list_photos(restaurant_id: int, db: Session = Depends(get_db)):
+    get_or_404(db, restaurant_id)
+    return db.scalars(
+        select(RestaurantPhoto)
+        .where(RestaurantPhoto.restaurant_id == restaurant_id)
+        .order_by(RestaurantPhoto.id)
+    ).all()
 
-cloudinary.config(
-    cloud_name=getenv("CLOUDINARY_CLOUD_NAME"),
-    api_key=getenv("CLOUDINARY_API_KEY"),
-    api_secret=getenv("CLOUDINARY_API_SECRET"),
-    secure=True,
+
+# A plain "def" route, so the blocking Cloudinary upload runs in a worker thread.
+@router.post(
+    "/restaurants/{restaurant_id}/photos",
+    status_code=201,
+    response_model=RestaurantPhotoResponse,
 )
-
-
-@router.post("/restaurants/{restaurant_id}/photos", status_code=201)
-async def upload_restaurant_photo(
+def upload_photo(
     restaurant_id: int,
     category: str = Form(...),
     photo: UploadFile = File(...),
+    admin: Admin = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ):
-    # Check that the restaurant exists
-    restaurant = db.get(Restaurant, restaurant_id)
+    category = category.strip().lower()
+    if category not in PHOTO_CATEGORIES:
+        raise HTTPException(status_code=400, detail="Category must be main, interior, exterior, or food")
 
-    if not restaurant:
-        raise HTTPException(status_code=404, detail="Restaurant not found")
+    restaurant = owned_or_404(db, restaurant_id, admin)
 
-    # Accept image files only
-    if not photo.content_type or not photo.content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="Please upload an image")
+    if photo.content_type not in ALLOWED_PHOTO_TYPES:
+        raise HTTPException(status_code=400, detail="Only JPG, PNG, and WebP images are allowed")
 
-    # Upload image to Cloudinary
+    photo.file.seek(0, os.SEEK_END)
+    size = photo.file.tell()
+    photo.file.seek(0)
+    if size == 0:
+        raise HTTPException(status_code=400, detail="Image is empty")
+    if size > MAX_PHOTO_BYTES:
+        raise HTTPException(status_code=413, detail="Image must be 5 MB or smaller")
+
+    # A new cover photo replaces the old one.
+    old_records = []
+    if category == "main":
+        old_records = db.scalars(
+            select(RestaurantPhoto).where(
+                RestaurantPhoto.restaurant_id == restaurant.id,
+                RestaurantPhoto.category == "main",
+            )
+        ).all()
+    old_public_ids = [r.public_id for r in old_records]
+
     try:
         result = cloudinary.uploader.upload(
             photo.file,
-            folder=f"luxar/restaurants/{restaurant_id}",
+            folder=f"luxar/restaurants/{restaurant.id}",
             resource_type="image",
         )
     except Exception:
@@ -54,50 +81,50 @@ async def upload_restaurant_photo(
             detail="Image upload failed. Check Cloudinary configuration.",
         )
 
-    # Save the returned image URL in PostgreSQL
-    new_photo = RestaurantPhoto(
-        restaurant_id=restaurant_id,
-        photo_url=result["secure_url"],
-        category=category,
-    )
+    try:
+        for record in old_records:
+            db.delete(record)
+        new_photo = RestaurantPhoto(
+            restaurant_id=restaurant.id,
+            photo_url=result["secure_url"],
+            public_id=result["public_id"],
+            category=category,
+        )
+        db.add(new_photo)
+        db.commit()
+        db.refresh(new_photo)
+    except Exception:
+        db.rollback()
+        destroy_image(result["public_id"])
+        raise HTTPException(status_code=500, detail="Could not save the photo")
 
-    db.add(new_photo)
-    db.commit()
-    db.refresh(new_photo)
+    for public_id in old_public_ids:
+        destroy_image(public_id)
 
     return new_photo
 
 
-@router.get("/restaurants/{restaurant_id}/photos")
-def get_restaurant_photos(
-    restaurant_id: int,
-    db: Session = Depends(get_db),
-):
-    restaurant = db.get(Restaurant, restaurant_id)
-
-    if not restaurant:
-        raise HTTPException(status_code=404, detail="Restaurant not found")
-
-    return (
-        db.query(RestaurantPhoto)
-        .filter(RestaurantPhoto.restaurant_id == restaurant_id)
-        .all()
-    )
-
-
 @router.delete("/photos/{photo_id}")
-def delete_restaurant_photo(
+def delete_photo(
     photo_id: int,
+    admin: Admin = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ):
     photo = db.get(RestaurantPhoto, photo_id)
-
     if not photo:
         raise HTTPException(status_code=404, detail="Photo not found")
 
-    # Delete the database record.
-    # Cloudinary file deletion can be added using its public_id.
-    db.delete(photo)
-    db.commit()
+    owner = db.get(Restaurant, photo.restaurant_id)
+    if owner is None or owner.owner_id != admin.id:
+        raise HTTPException(status_code=404, detail="Photo not found")
 
+    public_id = photo.public_id
+    try:
+        db.delete(photo)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Could not delete the photo record")
+
+    destroy_image(public_id)
     return {"message": "Photo deleted successfully"}
