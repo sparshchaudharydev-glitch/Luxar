@@ -1,3 +1,17 @@
+.heroPhoto {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+}
+
+.photoError {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-danger);
+}
+
+
 .page {
   display: flex;
   flex-direction: column;

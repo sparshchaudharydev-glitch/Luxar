@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import styles from './SectionForm.module.css';
 
-// Which form fields each section uses.
-const ALL_KEYS = ['location', 'interior', 'food', 'contact', 'timing', 'menu', 'facilities', 'reviews', 'luxar'];
+// Which form fields each section uses. Photos are added on the Images tab, not here.
+const ALL_KEYS = ['location', 'contact', 'timing', 'menu', 'facilities', 'reviews', 'luxar'];
 
 // Builds the form state from a restaurant (UI shape, camelCase).
 function initialForm(restaurant) {
@@ -12,8 +12,6 @@ function initialForm(restaurant) {
     address: restaurant.address,
     lat: d.coords?.lat ?? '',
     lng: d.coords?.lng ?? '',
-    interiorPhotos: d.interiorPhotos.join('\n'),
-    foodPhotos: d.foodPhotos.join('\n'),
     phone: d.contact.phone,
     whatsapp: d.contact.whatsapp,
     instagram: d.contact.instagram,
@@ -32,7 +30,6 @@ function initialForm(restaurant) {
 
 const toNumberOrNull = (value) => (value === '' || value == null ? null : Number(value));
 const toIntOrZero = (value) => (value === '' || value == null ? 0 : parseInt(value, 10));
-const lines = (text) => text.split('\n').map((s) => s.trim()).filter(Boolean);
 
 // Converts form state into the snake_case body the backend expects.
 // Only includes the fields for the sections being edited.
@@ -46,8 +43,6 @@ function buildPayload(form, sectionKeys) {
     payload.lat = toNumberOrNull(form.lat);
     payload.lng = toNumberOrNull(form.lng);
   }
-  if (has('interior')) payload.interior_photos = lines(form.interiorPhotos);
-  if (has('food')) payload.food_photos = lines(form.foodPhotos);
   if (has('contact')) {
     payload.phone = form.phone.trim();
     payload.whatsapp = form.whatsapp.trim();
@@ -139,26 +134,6 @@ export default function SectionForm({ restaurant, sectionKeys = ALL_KEYS, onSave
               <input type="number" step="any" min="-180" max="180" value={form.lng} onChange={set('lng')} placeholder="e.g. 77.2167" />
             </label>
           </div>
-        </section>
-      )}
-
-      {has('interior') && (
-        <section className={styles.card}>
-          <h3 className={styles.cardTitle}>Interior & exterior photos</h3>
-          <label className={styles.field}>
-            <span>Image URLs (one per line)</span>
-            <textarea rows={4} value={form.interiorPhotos} onChange={set('interiorPhotos')} placeholder="https://..." />
-          </label>
-        </section>
-      )}
-
-      {has('food') && (
-        <section className={styles.card}>
-          <h3 className={styles.cardTitle}>Food & seating photos</h3>
-          <label className={styles.field}>
-            <span>Image URLs (one per line)</span>
-            <textarea rows={4} value={form.foodPhotos} onChange={set('foodPhotos')} placeholder="https://..." />
-          </label>
         </section>
       )}
 
